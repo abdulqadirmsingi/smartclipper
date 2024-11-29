@@ -1,39 +1,39 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { ClipboardEntry } from "@/components/ClipboardEntry";
 import { SearchBar } from "@/components/SearchBar";
 import { toast } from "sonner";
+import { useClipboardMonitor } from "@/hooks/useClipboardMonitor";
 
-// Mock data for demonstration
-const mockEntries = [
-  {
-    id: "1",
-    content: "https://example.com/awesome-article",
-    type: "link" as const,
-    timestamp: "2 minutes ago",
-    tags: ["work", "research"],
-    isFavorite: true,
-  },
-  {
-    id: "2",
-    content: "Remember to buy groceries: milk, eggs, bread",
-    type: "text" as const,
-    timestamp: "15 minutes ago",
-    tags: ["personal"],
-    isFavorite: false,
-  },
-  {
-    id: "3",
-    content: "The quick brown fox jumps over the lazy dog",
-    type: "text" as const,
-    timestamp: "1 hour ago",
-    tags: [],
-    isFavorite: false,
-  },
-];
+interface ClipboardItem {
+  id: string;
+  content: string;
+  type: "text" | "link";
+  timestamp: string;
+  tags: string[];
+  isFavorite: boolean;
+}
 
 const Index = () => {
   const [search, setSearch] = useState("");
-  const [entries, setEntries] = useState(mockEntries);
+  const [entries, setEntries] = useState<ClipboardItem[]>([]);
+
+  const handleNewClipboardEntry = useCallback((content: string, type: "text" | "link") => {
+    console.log("Adding new clipboard entry:", { content, type });
+    
+    const newEntry: ClipboardItem = {
+      id: Date.now().toString(),
+      content,
+      type,
+      timestamp: "Just now",
+      tags: [],
+      isFavorite: false,
+    };
+
+    setEntries((prevEntries) => [newEntry, ...prevEntries]);
+  }, []);
+
+  // Initialize clipboard monitoring
+  useClipboardMonitor(handleNewClipboardEntry);
 
   const handleCopy = (content: string) => {
     navigator.clipboard.writeText(content);
@@ -80,6 +80,11 @@ const Index = () => {
               onToggleFavorite={() => handleToggleFavorite(entry.id)}
             />
           ))}
+          {filteredEntries.length === 0 && (
+            <div className="text-center text-muted-foreground py-8">
+              No clipboard entries found. Copy some text to get started!
+            </div>
+          )}
         </div>
       </div>
     </div>
